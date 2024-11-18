@@ -29,13 +29,13 @@ int do_ (char* argv_1)
         printf ("error open file\n");
         return 1;
     }
-    questioner (tree);
+    //questioner (tree);
 
-    printf ("start write\n");
-    writer_ (tree);
-
-    defen_world (tree);
-     
+    //printf ("start write\n");
+    //writer_ (tree);
+    difference_world (tree);
+    //defen_world (tree);
+    dump_three (tree, "dump 1");
 
     delet_tree (tree);
     return 0;
@@ -158,13 +158,52 @@ void* add_link (tre_* left_sheet)
     return new_parent_branch;
 }
 
-int dump_three (tre_* tree)
+int dump_three (tre_* tree, char* comment_to_dump)
 {
-//     static char file_ID = 'a';
-//     char* file_name[] = DUMP_FILE;
-//     file_name[0] = file_ID++;
-//    static FILE* fil = fopen (file_name, "w");
 
+   if (system ("find . -maxdepth 1 -type d -name  folder_log_png > answer_system.txt"))
+        static int folder_with_png = system ("mkdir folder_log_png");
+
+    static char generate_name = 'a';
+    char file_name[] = DUMP_FILE;
+    file_name[POSICION_WITH_NUMBER_PNG] = generate_name++;
+
+    FILE* fp = fopen (file_name, "w");
+
+    fprintf (fp, "digraph structs { \nrankdir=HR;\n");
+    //
+    write_branch_in_dot (tree, fp);
+    //
+    fprintf (fp, "}");
+    fclose (fp);
+    
+    file_name[POSITION_WITH_FORMAT_FILE] = '\0';
+    char comand_to_cmd_generate_png[SIZE_CMD] = {};
+    sprintf (comand_to_cmd_generate_png, "dot -Tpng %s.dot -o %s.png", file_name, file_name);
+    system (comand_to_cmd_generate_png);
+
+    static FILE* file_html = fopen (DUMP_HTML, "w");
+
+    fprintf (file_html, "<h1>%s<h1>\n <img src=\"%s.png\">\n", comment_to_dump, file_name);
+
+    return 0;
+}
+
+int write_branch_in_dot (tre_* tree, FILE* fp)
+{
+    fprintf (fp, "_%p [label = \"", tree);
+    fputs (tree->str, fp);
+    fprintf (fp,"\"];\n");
+    if (tree->left)
+    {
+        write_branch_in_dot ((tre_*) tree->left, fp);
+        fprintf (fp, "_%p->_%p [label = \"NO\"];\n", tree, tree->left);
+    }
+    if (tree->rght)
+    {
+        write_branch_in_dot ((tre_*) tree->rght, fp);
+        fprintf (fp, "_%p->_%p [label = \"YES\"];\n", tree, tree->rght);
+    }
 
     return 0;
 }
@@ -205,10 +244,12 @@ int writer_ (tre_* tree)
 
 int defen_world (tre_* tree)
 {
-    static int is_world = 0;
+    printf ("Enter the word to find\n");
+
+    static int recursion_depth = 0;
     static char find_world[SIZ] = {};
 
-    if (!is_world++)
+    if (!recursion_depth++)
     {
         char disposable = getchar ();
         scanf ("%[^\n]", find_world);
@@ -222,8 +263,8 @@ int defen_world (tre_* tree)
             printf ("not ");
             while (tree->str[num] != '\0') putchar (tree->str[num++]);
 
-            is_world--;
-            if (!is_world)
+            recursion_depth--;
+            if (!recursion_depth)
                 printf (".\n");
             else    
                 printf (", ");
@@ -238,13 +279,16 @@ int defen_world (tre_* tree)
             int num = 0;
             while (tree->str[num] != '\0') putchar (tree->str[num++]);
             
-            is_world--;
-            if (!is_world)
+            recursion_depth--;
+            if (!recursion_depth)
                 printf (".\n");
             else    
                 printf (", ");
             return 1;
         }
+        if (!recursion_depth--)
+            printf ("word did not find\n");
+        return 0;
     }
     if (!strcmp(tree->str, find_world))
     {
@@ -252,11 +296,129 @@ int defen_world (tre_* tree)
         int num = 0;
         while (tree->str[num] != '\0') putchar (tree->str[num++]);
         printf (" is: ");
-        is_world--;
+        recursion_depth--;
         return 1;
     }
     
-    is_world--;
+    recursion_depth--;
+
     return 0;
 }
+
+int difference_world (tre_* tree)
+{
+    
+    static int recursion_depth = 0;
+    static char find_world_first[SIZ] = {};
+    static char find_world_second[SIZ] = {};
+
+    if (!recursion_depth++)
+    {
+        printf ("Enter the words to compare\n");
+        char One_size_fits_all = scanf ("%[^\n]", find_world_first);
+
+        if (!One_size_fits_all)
+        {
+            One_size_fits_all = getchar ();
+            scanf ("%[^\n]", find_world_first);
+        }
+
+        One_size_fits_all = getchar ();
+        scanf ("%[^\n]", find_world_second);
+    //    PUTS (find_world_first);
+    //    PUTS (find_world_second);
+    }
+
+    int left = 0, right = 0;
+
+    if (tree->left)
+    {
+        left = difference_world ((tre_*) tree->left);
+        if (left == 2)
+        {
+            printf ("not ");
+            PUTS (tree->str)
+            
+            if (!--recursion_depth)
+                printf (".\n");
+            else    
+                printf (", ");
+            return 2;
+        }
+        else if (left)
+        {
+            printf ("not ");
+            PUTS (tree->str)
+            if (!recursion_depth)
+                printf (".\n");
+            else    
+                printf (", ");
+        }
+    }
+
+    if (tree->rght)
+    {
+        right = difference_world ((tre_*) tree->rght);
+        
+        if (right == 2)
+        {
+            PUTS (tree->str)
+            
+            if (!--recursion_depth)
+                printf (".\n");
+            else    
+                printf (", ");
+            return 2;
+        }
+        else if (!right)
+        {
+            if (!--recursion_depth)
+                printf ("both words were not found\n");
+            return 0;
+        }
+        else if (right == left) // == 1
+        {
+            PUTS (tree->str)
+            if (!--recursion_depth)
+            {
+
+                printf (". And the words are generally different, they do not have common features\n");
+                return 2;
+            }
+            printf (". And they are similar in that both: ");
+            return 2;
+        }
+        else if (right)
+        {
+            PUTS (tree->str)
+            if (!recursion_depth--)
+                printf (".\n");
+            else    
+                printf (", ");
+            return 1;
+        }
+    }
+    if (!strcmp(tree->str, find_world_first))
+    {
+        printf ("The ");
+       PUTS (tree->str);
+        printf (" is: ");
+        recursion_depth--;
+        return 1;
+    }
+    
+    if (!strcmp(tree->str, find_world_second))
+    {
+        printf ("The ");
+       PUTS (tree->str);
+        printf (" is: ");
+        recursion_depth--;
+        return 1;
+    }
+
+    recursion_depth--;
+    return 0;
+}
+
+
 
